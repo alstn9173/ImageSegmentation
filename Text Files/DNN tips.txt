@@ -1,0 +1,63 @@
+http://www.kdnuggets.com/2016/03/must-know-tips-deep-learning-part-1.html
+
+1. Data Augmentation
+	- 구현한 DNN에서 만족스러운 성능을 얻기 위해서는 많은 수의 training image가 필요.
+	- 보통 데이터가 부족한 경우가 많음 
+	- 따라서 아래와 같은 방식으로 Data Augmentation을 진행
+
+	- horizontally fliping
+	- random crops
+	- color jittering
+	- 회전, 확대/축소
+	- 명도, 채도 변화
+
+	- Fancy PCA (Krizhevsky et al.)
+		- RGB 채널 Intensity 변경
+
+
+2. Pre-Processing
+	- 데이터의 중심을 맞춤(zero-center)
+	- [-1, 1] 사이의 값으로 정규화 (이미지일 경우 [0, 255] 사이의 값을 가지므로 반드시 필요하지는 않음)
+
+	- PCA Whitening
+		1. zero-center 수행
+		2. 데이터의 상관 구조를 알려주는 공분산 행렬 계산
+		3. zero-center 된 원본 데이터를 고유 벡터로 투영하여 상관관계를 없앰
+		4. eigenbasis - 고유 값의 데이터를 구해 각 차원을 고유 값으로 나누어 scale을 nomalize 함
+		   (0으로 나누지 않도록 하기 위해 1e-5와 같은 작은 상수값을 더해줌)
+		
+		- 노이즈를 심하게 할 수도 있음 >> 1e-5를 증가시킴으로 완화될 수 있음
+
+
+3. Initializations
+
+- All Zero Initialization
+	- 이상적인 상황을 가정 
+	>> 적절한 정규화를 통하여 가중치의 약 절반이 양수, 남은 절반이 음수라고 가정
+
+	- 모든 weight 값을 0으로 초기화하는 것을 말함
+	- 네트워크 상의 모든 뉴런이 동일한 출력을 계산하게 될 경우, Back Propagation 중에 동일한 gradient를
+	  모두 계산하고 동일한 parameter 업데이트를 수행하므로 합당하지 않음.
+	- 따라서 모든 가중치가 동일하게 초기화되므로 비대칭적 데이터를 처리할 수 없음
+
+
+- Initialization with Small Random Numbers
+	- 0는 아니나 0에 가까운 가중치를 얻기 위한 방법.
+	- 0에 매우 가까운 작은 숫자로 무작위 추출 가능
+	- 가중치들이 제각각의 값을 가짐
+	- Uniform distribution에서 값을 뽑아낼 수도 있지만, 성능에 영향을 끼치지 못함
+	- 무작의로 초기환 된 뉴련의 Output 분포가 입력 수와 함께 증가하는 분산을 가짐
+
+- Calibrating the Variances
+	- fan-in (입력 수)의 제곱근을 통해 그 가중치 벡터를 스케일링하여 각 뉴런 출력의 변이를 1롤 정규화
+	- 네트워크의 모든 뉴런이 초기에 거의 동일한 출력 분포를 가지며 수렴 속도를 향상
+	- Rectified Linear Unit(ReLU)을 고려하지 않음
+
+- Current Recommendation
+	- ReLU로 초기화를 유도하여 네트워크에서 뉴런이 분산이 2.0/n일 시 좋은 성능을 냄
+
+
+4. During Training
+
+- Filters and pooling size
+	- 일반적으로 입력 이미지들은 2의 배수들을 사용
