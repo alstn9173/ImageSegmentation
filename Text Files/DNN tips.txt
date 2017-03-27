@@ -1,63 +1,167 @@
-http://www.kdnuggets.com/2016/03/must-know-tips-deep-learning-part-1.html
+from http://www.kdnuggets.com/2016/03/must-know-tips-deep-learning-part-1.html
 
 1. Data Augmentation
-	- 구현한 DNN에서 만족스러운 성능을 얻기 위해서는 많은 수의 training image가 필요.
-	- 보통 데이터가 부족한 경우가 많음 
-	- 따라서 아래와 같은 방식으로 Data Augmentation을 진행
-
+	- DNN need a lot of data.
+	- In many case, we suffered lack of data
 	- horizontally fliping
 	- random crops
 	- color jittering
-	- 회전, 확대/축소
-	- 명도, 채도 변화
+	- Rotation, Scaling
+	- Change Satuation, intensity
 
 	- Fancy PCA (Krizhevsky et al.)
-		- RGB 채널 Intensity 변경
+		- Change RGB channel Intensity
 
 
 2. Pre-Processing
-	- 데이터의 중심을 맞춤(zero-center)
-	- [-1, 1] 사이의 값으로 정규화 (이미지일 경우 [0, 255] 사이의 값을 가지므로 반드시 필요하지는 않음)
+	- zero-center
+	- nomalization in range [-1, 1] (if data is image, image has [0, 255] value.)
 
 	- PCA Whitening
-		1. zero-center 수행
-		2. 데이터의 상관 구조를 알려주는 공분산 행렬 계산
-		3. zero-center 된 원본 데이터를 고유 벡터로 투영하여 상관관계를 없앰
-		4. eigenbasis - 고유 값의 데이터를 구해 각 차원을 고유 값으로 나누어 scale을 nomalize 함
-		   (0으로 나누지 않도록 하기 위해 1e-5와 같은 작은 상수값을 더해줌)
+		1. zero-center
+		2. Compute the covariance matrix that tells us about the correlation structure in data
+		3. prejecting the original(zero-centered) data into the eigenbasis
+		4. because, to prevent divding 0 case, add small value like 1e-5
 		
-		- 노이즈를 심하게 할 수도 있음 >> 1e-5를 증가시킴으로 완화될 수 있음
+		- it can be noise more strong >> increasing 1e-5 value 
 
 
 3. Initializations
 
 - All Zero Initialization
-	- 이상적인 상황을 가정 
-	>> 적절한 정규화를 통하여 가중치의 약 절반이 양수, 남은 절반이 음수라고 가정
+	- assume the ideal situation
+	>> approximately half of the weights will be positive and half of them will be negative
 
-	- 모든 weight 값을 0으로 초기화하는 것을 말함
-	- 네트워크 상의 모든 뉴런이 동일한 출력을 계산하게 될 경우, Back Propagation 중에 동일한 gradient를
-	  모두 계산하고 동일한 parameter 업데이트를 수행하므로 합당하지 않음.
-	- 따라서 모든 가중치가 동일하게 초기화되므로 비대칭적 데이터를 처리할 수 없음
+	- Initialize every weight to 0
+	- if every neuron in the network computes the same output, then they will also all compute
+	  the same gradients during back-propagation and undergo the exact same parameter update
+	- there is no source of asymmetry between neurons if their weights are initialized to be the same
 
 
 - Initialization with Small Random Numbers
-	- 0는 아니나 0에 가까운 가중치를 얻기 위한 방법.
-	- 0에 매우 가까운 작은 숫자로 무작위 추출 가능
-	- 가중치들이 제각각의 값을 가짐
-	- Uniform distribution에서 값을 뽑아낼 수도 있지만, 성능에 영향을 끼치지 못함
-	- 무작의로 초기환 된 뉴련의 Output 분포가 입력 수와 함께 증가하는 분산을 가짐
+	- get weights to be very close to zero, but not identically zero
+	- rnadome these neurons to small number which are very close to zero (it treated as symmetry breaking)
+	- weight has random value
+	- It is also possible to use small numbers drawn from a uniform distribution,
+	  but this seems to have relatively little impack on the final performance in practice
+	- Has a variance that grows with the number of input
 
 - Calibrating the Variances
-	- fan-in (입력 수)의 제곱근을 통해 그 가중치 벡터를 스케일링하여 각 뉴런 출력의 변이를 1롤 정규화
-	- 네트워크의 모든 뉴런이 초기에 거의 동일한 출력 분포를 가지며 수렴 속도를 향상
-	- Rectified Linear Unit(ReLU)을 고려하지 않음
+	- nomalize the variance of each output to 1 by scaling its weight vector by the square root of its fan-in
+	- network initially have approximately the same output distribution and empirically improves 
+	  the rate of convergence
+	- doesn't consider the influence of Rectified Linear Unit(ReLU) nuerons
 
 - Current Recommendation
-	- ReLU로 초기화를 유도하여 네트워크에서 뉴런이 분산이 2.0/n일 시 좋은 성능을 냄
+	- initialization for ReLU, reaching the conclusion that the variance of neurons 
+	  in the network should be 2.0/n
 
 
 4. During Training
 
 - Filters and pooling size
-	- 일반적으로 입력 이미지들은 2의 배수들을 사용
+	- In many case, image size prefer to be power of 2
+	- small filter and small strides with zeros-padding,it can reduce the number of parameters
+	  and improves the accuracy rates of the whole DN
+	- In general, using 2x2
+
+- Learning rate
+	- divide gradient to mini batch size
+	- Learning Rate must be fixed
+	- Using validation set to get LR
+	- use 0.1
+	- check 2 or 5
+
+- Fine-tune on pre-trained models
+	- fine-tune the data using pre-trained model
+
+			│	very similar dataset		│	very different dataset
+──────────────────────────────────────────────────────
+ very little data 	│  Use linear classifier on top layer	│ Try linear classifier from different stages
+──────────────────────────────────────────────────────
+ quite a lot of data	│	Finetune a few layers		│	Finetune a large number of layers
+
+
+5. Activation Functions
+
+- Activation Function brings the non-linearity into networks
+
+- Sigmoid
+	- Mathematical form: σ(x) = 1 / (1 + e-x)
+	- take real-valued number and squashed into range between 0 and 1
+
+	- drawback
+		- Sigamoid saturate and kill gradients
+			- When weight is small, occured gradient vanished problem
+			- When weight is big, most neurons would become saturated
+
+		- Sigmoid outputs are not zero-centered
+
+- tan(x)
+	- squashed a real-valued number to the range [-1, 1]
+
+- Rectified Linear Unit (ReLU)
+	- f(x) = max(0, x)
+	- (Pros) sigmoid/tanh is expensive operations, ReLU doesn't suffer from saturating
+	- (Pros) greatly accelerate the convergence of stochastic gradient descent compared to the sigmoid/tanh
+	- (Cons) Fragile during training and can "die"
+		- It occur when learning rate is set too high
+
+- Leaky ReLU
+	- attempt to fix the ReLU's problem
+	- when x<0, it have a small negetive slope
+
+- Parametric ReLU
+	- learn slope from the data
+
+- Randomized ReLU
+	- The slipes of negative parts are randomized in a given range in the training, fixed in the testing
+
+
+6. Regularizations
+
+- L2 Regularization
+	- the most common form of regularization
+	- Implemented by penalizing the squared magnitude of all parameters directly in the objective
+	- For every weight w in the network, add the term 1/2*λ*w(square) to the objective 
+	  (λis the regularization strength)
+	- penalizing peaky weight vector and preferring diffuse weight vector
+
+- L1 Regularization
+	- For each weight w, add the term λ|w| to the objective
+	- Possible to combine the L1 regularization with the L2 regularization: λ1 |w| + λ2w2
+	  (This is called Elastic net regularization)
+	- it leads the weight vectors to become sparse during optimization (i.e. very close to exactly zero)
+	- In practice, L2 can be expected to give superior performance over L1
+
+- Max norm constraints
+	- enforce an absolute upper bound on the magnitude of the weight vector for every neuron
+	  and use projected gradient descent to enforce the constraint
+	- network cannot "explode" even when the leanring rates are set too hight because the updates are always
+	  bounded
+
+- Dropout
+	- Complements L1, L2, Max norm methods
+	- Interpreted as sampling a Neural Network within the full Neural Network,
+	  and only updating the parameters of the sampled network based on the input data
+	- not applied during testing
+	- While traning, dropout is implemented by only keeping a neuron active with some probability p,
+	  or setting it to zero otherwise
+
+
+8. Ensemble
+
+- Same model, different initialization
+	- Use cross-validation to determine the best hyperparameter
+	- Train multiple models with the best set of hyperparameters but with different random initialization
+	- (Danger) The variety is only due to initialization
+
+- Top models discovered durign cross-validation
+	- After cross-validation, pick the top few models to form the ensemble
+	- This improves the variety of the ensemble but has the danger of including suboptimal models
+	- This can be easier to perform since it doesn't require additional retraining
+
+- Different checkpoints of a single model
+	- If training is very expensive, some people have had limited succes in taking different checkpoints
+	  of a single network over time and using those to form an ensemble
+	- lack of variety, but is very cheap
