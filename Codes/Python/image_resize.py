@@ -1,15 +1,16 @@
 import PIL
 from PIL import Image
 
-basewidth = input('input the width:')
-baseheight = input('input the height:')
-img = Image.open('cat.bmp')
+input_file = raw_input('input your file name: ')
+basewidth = input('input the width: ')
+baseheight = input('input the height: ')
+img = Image.open(input_file)
 
 # get rgb value in image
 rgb_img = img.convert('RGB')
 r, g, b = rgb_img.getpixel((1,1)) # 1st column, 1st row
 
-print r, g, b
+print 'the first pixel\' RGB value is : ', r, g, b
 
 # resize width using ratio
 """"
@@ -28,4 +29,4 @@ img = img.resize((wsize, baseheight), PIL.Image.ANTIALIAS)
 print 'image width:',img.size[0], 'image height:',img.size[1]
 img = img.resize((basewidth, baseheight), PIL.Image.ANTIALIAS)
 
-img.save('cat_resized.bmp')
+img.save('resized_image.bmp')
