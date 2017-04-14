@@ -1,0 +1,167 @@
+from http://www.kdnuggets.com/2016/03/must-know-tips-deep-learning-part-1.html
+
+1. Data Augmentation
+	- DNN need a lot of data.
+	- In many case, we suffered lack of data
+	- horizontally fliping
+	- random crops
+	- color jittering
+	- Rotation, Scaling
+	- Change Satuation, intensity
+
+	- Fancy PCA (Krizhevsky et al.)
+		- Change RGB channel Intensity
+
+
+2. Pre-Processing
+	- zero-center
+	- nomalization in range [-1, 1] (if data is image, image has [0, 255] value.)
+
+	- PCA Whitening
+		1. zero-center
+		2. Compute the covariance matrix that tells us about the correlation structure in data
+		3. prejecting the original(zero-centered) data into the eigenbasis
+		4. because, to prevent divding 0 case, add small value like 1e-5
+		
+		- it can be noise more strong >> increasing 1e-5 value 
+
+
+3. Initializations
+
+- All Zero Initialization
+	- assume the ideal situation
+	>> approximately half of the weights will be positive and half of them will be negative
+
+	- Initialize every weight to 0
+	- if every neuron in the network computes the same output, then they will also all compute
+	  the same gradients during back-propagation and undergo the exact same parameter update
+	- there is no source of asymmetry between neurons if their weights are initialized to be the same
+
+
+- Initialization with Small Random Numbers
+	- get weights to be very close to zero, but not identically zero
+	- rnadome these neurons to small number which are very close to zero (it treated as symmetry breaking)
+	- weight has random value
+	- It is also possible to use small numbers drawn from a uniform distribution,
+	  but this seems to have relatively little impack on the final performance in practice
+	- Has a variance that grows with the number of input
+
+- Calibrating the Variances
+	- nomalize the variance of each output to 1 by scaling its weight vector by the square root of its fan-in
+	- network initially have approximately the same output distribution and empirically improves 
+	  the rate of convergence
+	- doesn't consider the influence of Rectified Linear Unit(ReLU) nuerons
+
+- Current Recommendation
+	- initialization for ReLU, reaching the conclusion that the variance of neurons 
+	  in the network should be 2.0/n
+
+
+4. During Training
+
+- Filters and pooling size
+	- In many case, image size prefer to be power of 2
+	- small filter and small strides with zeros-padding,it can reduce the number of parameters
+	  and improves the accuracy rates of the whole DN
+	- In general, using 2x2
+
+- Learning rate
+	- divide gradient to mini batch size
+	- Learning Rate must be fixed
+	- Using validation set to get LR
+	- use 0.1
+	- check 2 or 5
+
+- Fine-tune on pre-trained models
+	- fine-tune the data using pre-trained model
+
+			弛	very similar dataset		弛	very different dataset
+式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式
+ very little data 	弛  Use linear classifier on top layer	弛 Try linear classifier from different stages
+式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式式
+ quite a lot of data	弛	Finetune a few layers		弛	Finetune a large number of layers
+
+
+5. Activation Functions
+
+- Activation Function brings the non-linearity into networks
+
+- Sigmoid
+	- Mathematical form: 仲(x) = 1 / (1 + e-x)
+	- take real-valued number and squashed into range between 0 and 1
+
+	- drawback
+		- Sigamoid saturate and kill gradients
+			- When weight is small, occured gradient vanished problem
+			- When weight is big, most neurons would become saturated
+
+		- Sigmoid outputs are not zero-centered
+
+- tan(x)
+	- squashed a real-valued number to the range [-1, 1]
+
+- Rectified Linear Unit (ReLU)
+	- f(x) = max(0, x)
+	- (Pros) sigmoid/tanh is expensive operations, ReLU doesn't suffer from saturating
+	- (Pros) greatly accelerate the convergence of stochastic gradient descent compared to the sigmoid/tanh
+	- (Cons) Fragile during training and can "die"
+		- It occur when learning rate is set too high
+
+- Leaky ReLU
+	- attempt to fix the ReLU's problem
+	- when x<0, it have a small negetive slope
+
+- Parametric ReLU
+	- learn slope from the data
+
+- Randomized ReLU
+	- The slipes of negative parts are randomized in a given range in the training, fixed in the testing
+
+
+6. Regularizations
+
+- L2 Regularization
+	- the most common form of regularization
+	- Implemented by penalizing the squared magnitude of all parameters directly in the objective
+	- For every weight w in the network, add the term 1/2*伙*w(square) to the objective 
+	  (伙is the regularization strength)
+	- penalizing peaky weight vector and preferring diffuse weight vector
+
+- L1 Regularization
+	- For each weight w, add the term 伙|w| to the objective
+	- Possible to combine the L1 regularization with the L2 regularization: 伙1 |w| + 伙2w2
+	  (This is called Elastic net regularization)
+	- it leads the weight vectors to become sparse during optimization (i.e. very close to exactly zero)
+	- In practice, L2 can be expected to give superior performance over L1
+
+- Max norm constraints
+	- enforce an absolute upper bound on the magnitude of the weight vector for every neuron
+	  and use projected gradient descent to enforce the constraint
+	- network cannot "explode" even when the leanring rates are set too hight because the updates are always
+	  bounded
+
+- Dropout
+	- Complements L1, L2, Max norm methods
+	- Interpreted as sampling a Neural Network within the full Neural Network,
+	  and only updating the parameters of the sampled network based on the input data
+	- not applied during testing
+	- While traning, dropout is implemented by only keeping a neuron active with some probability p,
+	  or setting it to zero otherwise
+
+
+8. Ensemble
+
+- Same model, different initialization
+	- Use cross-validation to determine the best hyperparameter
+	- Train multiple models with the best set of hyperparameters but with different random initialization
+	- (Danger) The variety is only due to initialization
+
+- Top models discovered durign cross-validation
+	- After cross-validation, pick the top few models to form the ensemble
+	- This improves the variety of the ensemble but has the danger of including suboptimal models
+	- This can be easier to perform since it doesn't require additional retraining
+
+- Different checkpoints of a single model
+	- If training is very expensive, some people have had limited succes in taking different checkpoints
+	  of a single network over time and using those to form an ensemble
+	- lack of variety, but is very cheap
